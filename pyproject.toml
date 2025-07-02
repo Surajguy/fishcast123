@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "fishing-app"
+version = "0.1.0"
+description = "A comprehensive fishing application"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "0.112.0"
+uvicorn = "0.23.2"
+python-multipart = "0.0.20"
+python-dotenv = "1.0.0"
+requests = "2.31.0"
+Pillow = "10.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
