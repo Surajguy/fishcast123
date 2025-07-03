@@ -1,5 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -11,7 +11,7 @@ from ai_image import analyze_fishing_spot
 from catch_logger import CatchLogger
 from forecast import get_fishing_forecast
 
-app = FastAPI(title="Fishing Assistant API")
+app = FastAPI(title="FishCast AI - Fishing Assistant API")
 
 # Add CORS middleware
 app.add_middleware(
@@ -21,6 +21,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Initialize catch logger
 catch_logger = CatchLogger()
@@ -38,111 +41,10 @@ class ForecastRequest(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
-@app.get("/", response_class=HTMLResponse)
-def read_root():
-    # Check if API key is configured
-    api_key = os.getenv("GEMINI_API_KEY")
-    api_status = "✅ Google AI Studio configured" if api_key and api_key != "your_gemini_api_key_here" else "❌ Google AI Studio API key not configured"
-    
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Fishing Assistant API</title>
-        <style>
-            body {{ 
-                font-family: Arial, sans-serif; 
-                max-width: 800px; 
-                margin: 0 auto; 
-                padding: 20px;
-                background-color: #1a1a1a;
-                color: #ffffff;
-            }}
-            .endpoint {{ 
-                border: 1px solid #333; 
-                padding: 15px; 
-                margin: 10px 0; 
-                border-radius: 8px;
-                background-color: #2a2a2a;
-            }}
-            .method {{ 
-                background-color: #ff6b35; 
-                color: white; 
-                padding: 4px 8px; 
-                border-radius: 4px; 
-                font-size: 12px;
-                font-weight: bold;
-            }}
-            .status {{
-                padding: 10px;
-                border-radius: 8px;
-                margin: 10px 0;
-            }}
-            .status.success {{
-                background-color: #1a4a1a;
-                border: 1px solid #2a6a2a;
-            }}
-            .status.error {{
-                background-color: #4a1a1a;
-                border: 1px solid #6a2a2a;
-            }}
-            h1 {{ color: #ff6b35; }}
-            h2 {{ color: #ffffff; }}
-            .setup-info {{
-                background-color: #2a2a3a;
-                padding: 15px;
-                border-radius: 8px;
-                margin: 15px 0;
-            }}
-        </style>
-    </head>
-    <body>
-        <h1>🎣 FishCast API</h1>
-        <p>AI-powered fishing assistant backend</p>
-        
-        <div class="status {'success' if 'configured' in api_status else 'error'}">
-            <strong>Status:</strong> {api_status}
-        </div>
-        
-        {'<div class="setup-info"><strong>Setup Required:</strong><br>1. Get a free API key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a><br>2. Add it to your .env file: GEMINI_API_KEY=your_api_key<br>3. Restart the application</div>' if 'not configured' in api_status else ''}
-        
-        <h2>Available Endpoints:</h2>
-        
-        <div class="endpoint">
-            <span class="method">POST</span>
-            <strong>/api/analyze</strong>
-            <p>Upload a fishing spot image for AI analysis using Google Gemini</p>
-            <small>Accepts: multipart/form-data with image file</small>
-        </div>
-        
-        <div class="endpoint">
-            <span class="method">POST</span>
-            <strong>/api/catches</strong>
-            <p>Log a new fishing catch</p>
-            <small>Accepts: JSON with catch details</small>
-        </div>
-        
-        <div class="endpoint">
-            <span class="method">GET</span>
-            <strong>/api/catches</strong>
-            <p>Get all logged catches</p>
-        </div>
-        
-        <div class="endpoint">
-            <span class="method">POST</span>
-            <strong>/api/forecast</strong>
-            <p>Get fishing forecast for a location</p>
-            <small>Accepts: JSON with location details</small>
-        </div>
-        
-        <div class="endpoint">
-            <span class="method">GET</span>
-            <strong>/health</strong>
-            <p>Health check endpoint</p>
-        </div>
-    </body>
-    </html>
-    """
+@app.get("/")
+async def read_root():
+    """Serve the main FishCast AI application"""
+    return FileResponse('static/index.html')
 
 @app.post("/api/analyze")
 async def analyze_image(file: UploadFile = File(...)):
@@ -215,9 +117,21 @@ async def health_check():
     
     return {
         "status": "healthy", 
-        "service": "FishCast API",
+        "service": "FishCast AI",
         "ai_provider": "Google AI Studio (Gemini)",
         "api_configured": api_configured
+    }
+
+@app.get("/api/status")
+async def api_status():
+    """API configuration status for frontend"""
+    api_key = os.getenv("GEMINI_API_KEY")
+    api_configured = bool(api_key and api_key != "your_gemini_api_key_here")
+    
+    return {
+        "api_configured": api_configured,
+        "message": "✅ Ready to analyze fishing spots!" if api_configured else "❌ Please configure GEMINI_API_KEY",
+        "setup_url": "https://aistudio.google.com/app/apikey" if not api_configured else None
     }
 
 if __name__ == "__main__":
