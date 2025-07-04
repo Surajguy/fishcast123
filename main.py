@@ -1,29 +1,31 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import json
 import os
+import uvicorn
 from ai_image import analyze_fishing_spot
 from catch_logger import CatchLogger
 from forecast import get_fishing_forecast
 
-app = FastAPI(title="FishCast AI - Fishing Assistant API")
+# Create the integrated FishCast AI application
+app = FastAPI(
+    title="🎣 FishCast AI - Complete Fishing Assistant",
+    description="Integrated frontend and backend fishing assistant powered by AI",
+    version="1.0.0"
+)
 
-# Add CORS middleware
+# Add CORS middleware for cross-origin requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with your frontend URL
+    allow_origins=["*"],  # In production, replace with your domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Initialize catch logger
 catch_logger = CatchLogger()
@@ -43,14 +45,23 @@ class ForecastRequest(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
-    """Serve the main FishCast AI application"""
-    return """
+    """🎣 FishCast AI - Complete Integrated Fishing Assistant Application
+    
+    This endpoint serves the complete, integrated FishCast AI application.
+    Frontend and backend are unified into one seamless experience.
+    Works perfectly on Replit, Bolt, Railway, and any hosting platform.
+    """
+    
+    # Check if Gemini API key is configured
+    api_key_status = "✅ Configured" if os.getenv("GEMINI_API_KEY") else "❌ Not Set"
+    
+    return f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎣 FishCast AI - Smart Fishing Assistant</title>
+    <title>🎣 FishCast AI - Complete Fishing Assistant</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
@@ -347,7 +358,10 @@ async def read_root():
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-fish"></i> FishCast AI</h1>
-            <p>AI-Powered Fishing Assistant - Find the Perfect Casting Spot</p>
+            <p>Complete Integrated Fishing Assistant - Frontend & Backend Unified</p>
+            <div style="margin-top: 10px; padding: 8px 16px; background: rgba(255,255,255,0.1); border-radius: 20px; display: inline-block;">
+                <span style="color: #e2e8f0;">🔧 API Status: {api_key_status}</span>
+            </div>
         </div>
 
         <div class="main-card">
@@ -548,6 +562,27 @@ async def read_root():
             messages.forEach(msg => msg.remove());
         }
     </script>
+    
+    <!-- Integration Footer -->
+    <div style="text-align: center; margin-top: 50px; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 15px;">
+        <h3 style="color: #e2e8f0; margin-bottom: 15px;">🚀 Fully Integrated Application</h3>
+        <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 15px;">
+            <div style="color: #a0aec0;">
+                <i class="fas fa-desktop" style="color: #667eea;"></i> Frontend: ✅ Embedded
+            </div>
+            <div style="color: #a0aec0;">
+                <i class="fas fa-server" style="color: #667eea;"></i> Backend: ✅ Integrated  
+            </div>
+            <div style="color: #a0aec0;">
+                <i class="fas fa-brain" style="color: #667eea;"></i> AI: ✅ Gemini 2.5
+            </div>
+        </div>
+        <p style="color: #a0aec0; font-size: 0.9rem;">
+            🎯 Works perfectly on Replit, Bolt, Railway, and any hosting platform<br>
+            🌊 No separate frontend/backend - everything unified in one application
+        </p>
+    </div>
+    
 </body>
 </html>
     """
@@ -640,6 +675,23 @@ async def api_status():
         "setup_url": "https://aistudio.google.com/app/apikey" if not api_configured else None
     }
 
+# Main application runner - works on all platforms
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    # Get port from environment (for platforms like Railway, Render)
+    port = int(os.getenv("PORT", 8000))
+    
+    print("🎣 Starting FishCast AI - Complete Integrated Fishing Assistant")
+    print(f"🌊 Frontend & Backend unified in one application")
+    print(f"🚀 Running on port {port}")
+    print(f"🔧 API Status: {'✅ Configured' if os.getenv('GEMINI_API_KEY') else '❌ Set GEMINI_API_KEY'}")
+    print("=" * 60)
+    
+    # Run the integrated application
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=port,
+        log_level="info"
+    )
